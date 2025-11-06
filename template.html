@@ -1,0 +1,70 @@
+<!doctype html>
+<html class="{{ 'victory' if victory else 'lose' }}">
+<head>
+  <meta charset="utf-8"/>
+  <title>{{ title or "Table" }}</title>
+  <style>
+    h2{font-size:30px}h3{font-size:20px}
+    h2,h3{margin:10px;text-align:center}
+    h2,h3,td,th{text-align:center}
+    .reward img,td,th{vertical-align:middle}
+    @page{margin:0;padding:0;background:url("https://i.imgur.com/AIlncQ2.jpeg");background-size:100% 100%}
+    body{margin:0;padding:16px;background:url("https://i.imgur.com/5pKWBLw.png") right 10px top 10px/100px no-repeat; font-family: 'Times New Roman', Times, serif;}
+    .col_name a,html{color:#fff}
+    .victory{background:url("https://i.imgur.com/BmKqWQk.png") top left repeat-x}
+    .lose{background:url("https://i.imgur.com/iaoXthB.png") top left repeat-x}
+    header{padding-bottom:10px}
+    table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;line-height:14px}
+    td,th{border:0;padding:2px;width:100px}
+    th{background:rgba(255,255,255,.2)}
+    .col_respect{width:40px}
+    .col_hits{width:30px;font-size:10px}
+    .reward{font-size:20px}
+    .reward img{display:inline-block}
+    .rewards{justify-content:center;display:flex}
+    .tables{display:flex;justify-content:space-around}
+    .table{vertical-align:top;display:inline-block}
+    .col_payout{text-align:right;font-size:14px}
+    .col_name{text-align:left;font-size:14px}
+    tr:nth-child(2n){background:rgba(255,255,255,.1)}
+    .no_payout{background:rgba(255,0,0,.2)}
+    .no_payout:nth-child(2n){background:rgba(105,0,0,.2)}
+  </style>
+</head>
+<body>
+  <header>
+    <h2>{{ title or "Table" }}</h2>
+    <div class="rewards">
+      {% for reward in rewards %}
+        <div class="reward">
+          {{ reward[1] }}x<img src="https://www.torn.com/images/items/{{ reward[0] }}/medium.png" />
+        </div>
+      {% endfor %}
+    </div>
+    <h3>Total payout for members: {{ payout }} $</h2>
+  </header>
+  <div class="tables">
+  {% for table in tables %}
+    <div class="table">
+      <table>
+        <thead> <tr> <th>Name</th> <th class="col_respect">War</th> <th class="col_respect">Raid</th> <th>Payout</th> </tr> </thead>
+        <tbody>
+          {% for r in table %}
+            <tr class="payout_row{% if not r['payout'] %} no_payout{% endif %}">
+              <td class="col_name">
+                <a href="https://www.torn.com/profiles.php?XID={{r["id"]}}">
+                  {{ r["name"] }}
+                </a>
+              </td>
+              <td class="col_respect">{{r["respect_war"]}}</td>
+              <td class="col_respect">{{r["respect_crossfire"]}}</td>
+              <td class="col_payout">{{r["payout_str"]}} $</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% endfor %}
+  </div>
+</body>
+</html>

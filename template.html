@@ -4,6 +4,8 @@
   <meta charset="utf-8"/>
   <title>{{ title or "Table" }}</title>
   <style>
+    a{transition-duration: 0.5s;}
+    a:hover{ opacity: 0.5 !important}
     h2{font-size:30px}h3{font-size:20px}
     h2,h3{margin:10px;text-align:center}
     h2,h3,td,th{text-align:center}
@@ -15,12 +17,12 @@
     .lose{background:url("https://i.imgur.com/iaoXthB.png") top left repeat-x}
     header{padding-bottom:10px}
     table{border-collapse:collapse;font-family:Arial,sans-serif;font-size:12px;line-height:14px}
-    td,th{border:0;padding:2px;width:100px}
+    td,th{border:0;padding:2px;width:110px;position:relative;z-index: 200;}
     th{background:rgba(255,255,255,.2)}
-    .col_respect{width:40px}
+    .col_respect{width:42px}
     .col_hits{width:30px;font-size:10px}
     .reward{font-size:20px}
-    .reward img{display:inline-block}
+    .reward img{display:inline-block; width: 60px;}
     .rewards{justify-content:center;display:flex; text-align: center;}
     .tables{display:flex;justify-content:space-around}
     .table{vertical-align:top;display:inline-block}
@@ -30,6 +32,8 @@
     .no_payout{background:rgba(255,0,0,.2)}
     .no_payout:nth-child(2n){background:rgba(105,0,0,.2)}
     .est_price{display: block; font-size: 12px; color: #fff; padding: 0 3px;}
+    .created_by{ position: absolute; bottom: 0; right: 0; z-index: 1; width: 150px; display: block}
+    .created_by img{display: block; width: 100%;}
   </style>
 </head>
 <body>
@@ -38,7 +42,7 @@
     <div class="rewards">
       {% for reward in rewards %}
         <div class="reward">
-          &nbsp;&nbsp;&nbsp;{{ reward[1] }}x<img src="https://www.torn.com/images/items/{{ reward[0] }}/medium.png" />
+          &nbsp;&nbsp;&nbsp;{{ reward[1] }}x<img src="https://www.torn.com/images/items/{{ reward[0] }}/large.png" />
           <span class="est_price">
             ~ {{ reward[2]}} $
           </span>
@@ -70,5 +74,8 @@
     </div>
   {% endfor %}
   </div>
+  <a href="https://www.torn.com/forums.php#/p=threads&f=23&t=16496115&b=0&a=0&start=0&to=26342535" class="created_by">
+    <img src="https://i.imgur.com/jKmPASa.png">
+  </a>
 </body>
 </html>

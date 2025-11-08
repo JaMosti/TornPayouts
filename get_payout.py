@@ -7,13 +7,13 @@ from pathlib import Path
 
 
 # --- Edit
-enemy_faction = 13421
-war_from = "16:00:09 07/11/25"
-war_to = "08:20:16 08/11/25"
-key = ""        # https://www.torn.com/preferences.php#tab=api
+enemy_faction = 13421               # id of enemy faction - Copy from url
+war_from = "16:00:09 07/11/25"      # Chain died - Copy from faction log
+war_to = "09:00:25 08/11/25"        # War start - Copy from faction log
+key = "etrgwAdkvDZgHC8W"            # https://www.torn.com/preferences.php#tab=api
 cf_factor_during_war = 1            # Price for crossfire hit
 cf_factor_after_war = 1             # Price for crossfire hit
-payout_factor = 0.7     # How much goes to members
+payout_factor = 0.7                 # How much goes to members
 
 # --- Configuration ---
 url = "https://api.torn.com/v2/faction/members"

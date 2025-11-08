@@ -21,7 +21,7 @@
     .col_hits{width:30px;font-size:10px}
     .reward{font-size:20px}
     .reward img{display:inline-block}
-    .rewards{justify-content:center;display:flex}
+    .rewards{justify-content:center;display:flex; text-align: center;}
     .tables{display:flex;justify-content:space-around}
     .table{vertical-align:top;display:inline-block}
     .col_payout{text-align:right;font-size:14px}
@@ -29,6 +29,7 @@
     tr:nth-child(2n){background:rgba(255,255,255,.1)}
     .no_payout{background:rgba(255,0,0,.2)}
     .no_payout:nth-child(2n){background:rgba(105,0,0,.2)}
+    .est_price{display: block; font-size: 12px; color: #fff; padding: 0 3px;}
   </style>
 </head>
 <body>
@@ -37,7 +38,10 @@
     <div class="rewards">
       {% for reward in rewards %}
         <div class="reward">
-          {{ reward[1] }}x<img src="https://www.torn.com/images/items/{{ reward[0] }}/medium.png" />
+          &nbsp;&nbsp;&nbsp;{{ reward[1] }}x<img src="https://www.torn.com/images/items/{{ reward[0] }}/medium.png" />
+          <span class="est_price">
+            ~ {{ reward[2]}} $
+          </span>
         </div>
       {% endfor %}
     </div>

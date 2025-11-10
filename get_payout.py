@@ -127,7 +127,7 @@ while(next_link):
                             adj = respect_gain * raid_factor_during_war \
                                     if int(war_end) > int(attack["started"]) \
                                     else respect_gain * raid_factor_after_war
-                            output_data[attack["attacker"]["id"]]["respect_raid_adj"] += respect_gain
+                            output_data[attack["attacker"]["id"]]["respect_raid_adj"] += adj
 
                         # Other stats
                         output_data[attack["attacker"]["id"]]["overseas"] += attack["modifiers"]["overseas"] > 1

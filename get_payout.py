@@ -389,7 +389,7 @@ def main():
         os.chdir(application_path)
         template = env.get_template("util/template.html")
         html_str = template.render(
-            title   = f"War agains {enemy_name} report",
+            title   = f"War against {enemy_name} report",
             victory = did_we_won,
             rewards  = rewards,
             payout  = payout_str,
@@ -413,7 +413,7 @@ def main():
             check=False,
             creationflags=subprocess.CREATE_NO_WINDOW
         )
-        messagebox.showinfo("Report ready!", f"War report agains {enemy_name} was generated!\nCheck {pdf_path}")
+        messagebox.showinfo("Report ready!", f"War report against {enemy_name} was generated!\nCheck {pdf_path}")
     except Exception as e:
         error_text = traceback.format_exc()
         messagebox.showerror("Error!", error_text)

@@ -28,6 +28,7 @@ def main():
         raid_factor_during_war = values[4] / 100            # Price for raid hit
         raid_factor_after_war = values[5] / 100             # Price for raid hit
         payout_factor = values[6] / 100                 # How much goes to members
+        public_mode = not checkbox_var.get()
 
         # --- Validate input
         try:
@@ -54,7 +55,6 @@ def main():
             return 1
 
         # --- Configuration ---
-        public_mode =  True
         url = "https://api.torn.com/v2/faction/members"
         faction_id = 9176   # The Iron Fist ID
         chain_milestones = [25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000]
@@ -413,6 +413,7 @@ def main():
             check=False,
             creationflags=subprocess.CREATE_NO_WINDOW
         )
+        messagebox.showinfo("Report ready!", f"War report agains {enemy_name} was generated!\nCheck {pdf_path}")
     except Exception as e:
         error_text = traceback.format_exc()
         messagebox.showerror("Error!", error_text)
@@ -443,33 +444,59 @@ def animate_button():
         root.after(400, animate_button)  # repeat every 400ms
 
 # Create main window
+default_values = [
+    [13421, "Enemy Faction ID", tk.IntVar, 3],
+    ["16:00:09 07/11/25", "Starting time", tk.StringVar, 3],
+    ["09:00:25 08/11/25", "Ending time", tk.StringVar, 3],
+    ["", "Api Key - Limited Access", tk.StringVar, 1],
+    [100, "Raid Factor - war [%]", tk.IntVar, 3],
+    [100, "Raid Factor - after [%]", tk.IntVar, 3],
+    [70, "Members cut [%]", tk.IntVar, 3]
+]
+
 root = tk.Tk()
 root.iconbitmap(os.path.join(application_path, "img", "icon.ico"))
 root.title("War report generator - by Mosti")
-root.geometry("360x400")
+root.geometry("435x245")
 root.resizable(False, False)
+root.configure(padx=5)
 style = ttk.Style()
 style.theme_use("xpnative")
-default_values = [
-    [13421, "Enemy Faction ID", tk.IntVar],
-    ["16:00:09 07/11/25", "Starting time", tk.StringVar],
-    ["09:00:25 08/11/25", "Ending time", tk.StringVar],
-    ["", "Api Key - Limited Access", tk.StringVar],
-    [100, "Raid points factor during war in % (0-100)", tk.IntVar],
-    [100, "Raid points factor after war in % (0-100)", tk.IntVar],
-    [70, "Members cut in % (0-100)", tk.IntVar]
-]
 
 text_vars = []
-for i, value in enumerate(default_values):
-    var = value[2](value=value[0])  # set default value
+current_row = 0
+col = 0
+max_cols = 6
+for value in default_values:
+    var = value[2](value=value[0])
     text_vars.append(var)
-    ttk.Label(root, text=value[1]).pack(pady=(10 if i == 0 else 5, 0))
-    entry = ttk.Entry(root, textvariable=var, width=40)
-    entry.pack()
+
+    columns_per_row = value[3]  # how many inputs in this row
+    entry_width = int(10*int(max_cols/columns_per_row))
+    if columns_per_row == 1:
+        entry_width += 8
+    elif columns_per_row == 2:
+        entry_width += 3
+
+    # Place label above entry
+    ttk.Label(root, text=value[1], width=entry_width).grid(row=current_row, column=col, columnspan=int(max_cols/columns_per_row), padx=5, pady=(5, 2))
+    ttk.Entry(root, textvariable=var, width=entry_width).grid(row=current_row + 1, column=col, columnspan=int(max_cols/columns_per_row), padx=5, pady=(0, 5))
+
+    col += int(max_cols/columns_per_row)
+
+    # Move to next row if we've filled this one
+    if col >= max_cols:
+        current_row += 2
+        col = 0
+
+# Add a checkbox
+checkbox_var = tk.BooleanVar(value=False)  # default unchecked
+checkbox = ttk.Checkbutton(root, text="Show Negative Feedback", variable=checkbox_var)
+checkbox.grid(row=current_row, column=0, columnspan=6, pady=5)
+current_row += 1
 
 running = tk.BooleanVar(value=False)
-button = ttk.Button(root, text="Generate", command=run_main_with_animation, width=15)
-button.pack(pady=20)
+button = ttk.Button(root, text="Generate", command=run_main_with_animation, width=68)
+button.grid(row=current_row, column=0, columnspan=6, pady=10)
+
 root.mainloop()
-# etrgwAdkvDZgHC8W

@@ -5,7 +5,7 @@ import time
 import os
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
-
+from math import ceil, floor
 
 # --- Edit
 enemy_faction = 13421               # id of enemy faction - Copy from url
@@ -15,6 +15,7 @@ key = ""            # https://www.torn.com/preferences.php#tab=api
 raid_factor_during_war = 1            # Price for raid hit
 raid_factor_after_war = 1             # Price for raid hit
 payout_factor = 0.7                 # How much goes to members
+public_mode = True
 
 # --- Configuration ---
 url = "https://api.torn.com/v2/faction/members"
@@ -31,6 +32,9 @@ params = {
     "timestamp": timestamp_to,
     "key": key
 }
+war_lenght = int((timestamp_to - timestamp_from) / 3600)
+hits_treshold_upgrade = ceil(war_lenght/3*5)
+hits_treshold_downgrade = floor(war_lenght/4*5) * (not public_mode)
 
 # === Get war data
 url = f"https://api.torn.com/v2/faction/rankedwars?filters=outgoing&limit=10&sort=ASC&to={timestamp_to}&from={timestamp_from}"
@@ -341,6 +345,7 @@ html_str = template.render(
     rewards  = rewards,
     payout  = payout_str,
     columns = columns,
+    tresholds = [hits_treshold_downgrade, hits_treshold_upgrade],
     tables  = tables,
     hof  = hof,
     hof2 = hof2

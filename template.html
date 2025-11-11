@@ -21,20 +21,24 @@
     td,th{border:0;padding:2px;width:110px;position:relative;z-index: 200;}
     th{background:rgba(255,255,255,.2)}
     .col_respect{width:42px}
+    .respect_column{width: 18px;}
     .col_hof{width:84px}
     .col_hits{width:30px;font-size:10px}
     .reward{font-size:20px}
     .reward img{display:inline-block; width: 60px;}
     .rewards{justify-content:center;display:flex;text-align:center;}
     .tables{display:flex;justify-content:space-around;flex-wrap:wrap;}
-    .table{vertical-align:top;display:inline-block;min-width: 33.33%}
+    .table{vertical-align:top;display:inline-block;min-width: 33.33%; text-align: center;}
+    .table table{text-align: left;}
     .hof_tables .table{padding:10px;}
     .table.empty{opacity: 0.2}
-    .col_payout{text-align:right;font-size:14px}
+    .col_payout{text-align:right;font-size:13px}
     .col_name{text-align:left;font-size:14px}
     tr:nth-child(2n){background:rgba(255,255,255,.1)}
-    .no_payout{background:rgba(255,0,0,.2)}
-    .no_payout:nth-child(2n){background:rgba(105,0,0,.2)}
+    .downgrade{background:rgba(255,0,0,.2)}
+    tr:nth-child(2n) .downgrade{background:rgba(105,0,0,.2)}
+    .upgrade{background:rgba(0, 255, 26, 0.2)}
+    tr:nth-child(2n) .upgrade{background:rgba(14, 105, 0, 0.2)}
     .est_price{display: block; font-size: 12px; color: #fff; padding: 0 3px;}
     .created_by{ position: absolute; bottom: 0; right: 0; z-index: 1; width: 150px; display: block}
     .created_by img{display: block; width: 100%;}
@@ -64,10 +68,13 @@
   {% for table in tables %}
     <div class="table">
       <table>
-        <thead> <tr> <th>Name</th> <th class="col_respect">War</th> <th class="col_respect">Raid</th> <th>Payout</th> </tr> </thead>
+        <thead> <tr> <th class="respect_column"></th><th>Name</th> <th class="col_respect">War</th> <th class="col_respect">Raid</th> <th>Payout</th> </tr> </thead>
         <tbody>
           {% for r in table %}
-            <tr class="payout_row{% if not r['payout'] %} no_payout{% endif %}">
+            <tr class="payout_row">
+              <td class="respect_column{% if r['attacks'] < tresholds[0] %} downgrade{% endif %}{% if r['attacks'] > tresholds[1] %} upgrade{% endif %}">
+                {% if r['attacks'] < tresholds[0] %}-{% endif %}{% if r['attacks'] > tresholds[1] %}+{% endif %}
+              </td>
               <td class="col_name">
                 <a href="https://www.torn.com/profiles.php?XID={{r["id"]}}">
                   {{ r["name"] }}

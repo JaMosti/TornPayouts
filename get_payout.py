@@ -21,7 +21,6 @@ public_mode = True
 url = "https://api.torn.com/v2/faction/members"
 faction_id = 9176   # The Iron Fist ID
 chain_milestones = [25, 50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000]
-chain_points =     [20, 40, 80, 160, 320, 640, 1280, 2560, 5120, 10240, 20480, 40960]
 all_respect = 0
 dt = datetime.strptime(war_from, "%H:%M:%S %d/%m/%y").replace(tzinfo=timezone.utc)
 timestamp_from = dt.timestamp()
@@ -203,10 +202,11 @@ for member in output_data:
 
 # === Get Hall of fame
 best_saves.sort(key=lambda x: x[3], reverse=False)
-hof_len = 10
+hof_len = 7
 hof = [
     {
         "empty": False,
+        "img": "close_call",
         "title": "Not Even Close",
         "description": "Hits with lowest chain timer",
         "column": "Timer",
@@ -264,33 +264,27 @@ for key in titles.keys():
         if tops == 1:
             hof.append({
                 "empty": False,
+                "img": key,
                 "title": titles[key][0],
                 "description": titles[key][1],
                 "column": titles[key][2],
                 "best": [arr[0]],
                 "rest": arr[1:hof_len]
             })
-        elif tops < hof_len:
+        else:
             hof.append({
                 "empty": False,
+                "img": key,
                 "title": titles[key][0],
                 "description": titles[key][1],
                 "column": titles[key][2],
                 "best": [],
                 "rest": arr[:hof_len]
             })
-        else:
-            hof.append({
-                "empty": False,
-                "title": titles[key][0],
-                "description": titles[key][1],
-                "column": titles[key][2],
-                "best": [],
-                "rest": arr[:tops]
-            })
     else:
         hof.append({
             "empty": True,
+                "img": key,
             "title": titles[key][0],
             "description": titles[key][1],
             "column": titles[key][2],
@@ -312,6 +306,7 @@ for a in arr2[1:]:
 if tops == 1:
     hof2 = [{
         "title": "Tough-on-Toddlers",
+        "img": "attacks_below_2_ff",
         "description": "Hits below 2 FF score",
         "columns": ["Hits", "%"],
         "columns_n": 3,
@@ -321,6 +316,7 @@ if tops == 1:
 else:
     hof2 = [{
         "title": "Tough-on-Toddlers",
+        "img": "attacks_below_2_ff",
         "description": "Hits below 2 FF score",
         "columns": ["Hits", "%"],
         "columns_n": 3,
@@ -333,7 +329,8 @@ columns = list(next(iter(output_data.values())).keys())
 table = sorted(list(output_data.values()), key=lambda x: x['payout'], reverse=True)
 tables = [table]
 if len(table) > 50:
-    tables = [table[:50], table[50:]]
+    len_table_half = len(table)//2
+    tables = [table[:len_table_half], table[len_table_half:]]
 env = Environment(
     loader=FileSystemLoader(searchpath="."),   # looks in current directory
     autoescape=select_autoescape(["html", "xml"])

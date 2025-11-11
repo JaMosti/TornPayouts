@@ -11,7 +11,7 @@ from pathlib import Path
 enemy_faction = 13421               # id of enemy faction - Copy from url
 war_from = "16:00:09 07/11/25"      # Chain died - Copy from faction log
 war_to = "09:00:25 08/11/25"        # War start - Copy from faction log
-key = "etrgwAdkvDZgHC8W"            # https://www.torn.com/preferences.php#tab=api
+key = ""            # https://www.torn.com/preferences.php#tab=api
 raid_factor_during_war = 1            # Price for raid hit
 raid_factor_after_war = 1             # Price for raid hit
 payout_factor = 0.7                 # How much goes to members
@@ -69,11 +69,13 @@ for faction in report["factions"]:
                 "name": member["name"],
                 "attacks_war": 0,
                 "respect_war": 0,
+                "respect_leaked": 0,
                 "attacks_raid": 0,
                 "respect_raid": 0,
                 "respect_raid_adj": 0,
                 "adjusted_respect": 0,
                 "attacks_below_2_ff": 0,
+                "chain_watcher": 0,
                 "assists": 0,
                 "overseas": 0,
                 "payout": 0,
@@ -101,7 +103,7 @@ payout_str = "".join(reversed(pay_new))
 # === Get Hits
 url = "https://api.torn.com/v2/faction/attacks"
 next_link = f"{url}?filters=outgoing&limit=100&sort=ASC&to={timestamp_to}&from={timestamp_from}"
-aaa = set()
+prev_attack_timestamp = timestamp_from
 while(next_link):
     try:
         response = requests.get(next_link, params=params)
@@ -109,37 +111,60 @@ while(next_link):
         if "attacks" in data:
             attacks = data["attacks"]
             for attack in attacks:
-
                 if attack['chain'] in chain_milestones:
                     respect_gain = 10
                 else:
                     respect_gain = attack['respect_gain']
 
-                if attack["is_ranked_war"] or attack["is_raid"]:
-                    if respect_gain:
-                        if attack["is_ranked_war"]:
-                            output_data[attack["attacker"]["id"]]["attacks_war"] += 1
-                            adj = respect_gain if int(war_end) > int(attack["started"]) else 0
-                            output_data[attack["attacker"]["id"]]["respect_war"] += adj
-                        elif attack["is_raid"]:
-                            output_data[attack["attacker"]["id"]]["attacks_raid"] += 1
-                            output_data[attack["attacker"]["id"]]["respect_raid"] += respect_gain
-                            adj = respect_gain * raid_factor_during_war \
-                                    if int(war_end) > int(attack["started"]) \
-                                    else respect_gain * raid_factor_after_war
-                            output_data[attack["attacker"]["id"]]["respect_raid_adj"] += adj
-
-                        # Other stats
-                        output_data[attack["attacker"]["id"]]["overseas"] += attack["modifiers"]["overseas"] > 1
-                        output_data[attack["attacker"]["id"]]["attacks_below_2_ff"] += attack["modifiers"]["fair_fight"] < 2
+                if respect_gain:
+                    if attack["is_ranked_war"]:
+                        output_data[attack["attacker"]["id"]]["attacks_war"] += 1
+                        adj = respect_gain if int(war_end) > int(attack["started"]) else 0
+                        output_data[attack["attacker"]["id"]]["respect_war"] += adj
+                    elif attack["is_raid"]:
+                        output_data[attack["attacker"]["id"]]["attacks_raid"] += 1
+                        output_data[attack["attacker"]["id"]]["respect_raid"] += respect_gain
+                        adj = respect_gain * raid_factor_during_war \
+                                if int(war_end) > int(attack["started"]) \
+                                else respect_gain * raid_factor_after_war
+                        output_data[attack["attacker"]["id"]]["respect_raid_adj"] += adj
                     
-                    output_data[attack["attacker"]["id"]]["assists"] += attack["result"] == "Assist"
+                    if attack["chain"] > 25:
+                        output_data[attack["attacker"]["id"]]["chain_watcher"] += attack["ended"] - prev_attack_timestamp > 180 # Chain saved
+
+                    if attack["is_ranked_war"] or attack["is_raid"]:
+                        output_data[attack["attacker"]["id"]]["overseas"] += attack["modifiers"]["overseas"] > 1 # Overseas
+                        output_data[attack["attacker"]["id"]]["attacks_below_2_ff"] += attack["modifiers"]["fair_fight"] < 2 # Below 2 FF
+                if attack["is_ranked_war"] or attack["is_raid"]:
+                    output_data[attack["attacker"]["id"]]["assists"] += attack["result"] == "Assist" # Assists
+                prev_attack_timestamp = attack["ended"]
+                     
+        next_link = data["_metadata"]["links"]["next"]
+        if len(attacks) < 100:
+            next_link = None
+    except Exception as e:
+        print(e)
+        print("Sleeping for 30 sec")
+        time.sleep(30)
+# === Get Leaks
+url = "https://api.torn.com/v2/faction/attacks"
+next_link = f"{url}?filters=incoming&limit=100&sort=ASC&to={timestamp_to}&from={timestamp_from}"
+while(next_link):
+    try:
+        response = requests.get(next_link, params=params)
+        data = response.json()
+        if "attacks" in data:
+            attacks = data["attacks"]
+            for attack in attacks:
+                if attack["is_ranked_war"]:
+                    output_data[attack["defender"]["id"]]["respect_leaked"] += attack["respect_gain"]
 
         next_link = data["_metadata"]["links"]["next"]
         if len(attacks) < 100:
             next_link = None
     except Exception as e:
         print(e)
+        print(response)
         print("Sleeping for 30 sec")
         time.sleep(30)
 
@@ -157,14 +182,57 @@ for member in output_data:
     output_data[member]["adjusted_respect"] = int(output_data[member]["adjusted_respect"])
 
 # === Get supports
-supports = [[output_data[member]["assists"], member, output_data[member]["name"]] for member in output_data if output_data[member]["assists"]]
-supports.sort(key=lambda x: x[0], reverse=True)
-# === Get baby bullies
-bullies = [[output_data[member]["attacks_below_2_ff"], output_data[member]["attacks_war"]+output_data[member]["attacks_raid"], member, output_data[member]["name"]] for member in output_data]
-bullies.sort(key=lambda x: x[0], reverse=True)
-# === Get globertrotters
-globertrotters = [[output_data[member]["overseas"], member, output_data[member]["name"]] for member in output_data if output_data[member]["overseas"]]
-globertrotters.sort(key=lambda x: x[0], reverse=True)
+hof = []
+titles = {
+    "assists": ["SUPPORT", "Assits"],
+    "attacks_below_2_ff": ["BABY BULLY", "Hits"],
+    "overseas": ["GLOBETROTTER", "Hits"],
+    "chain_watcher": ["CHAIN WATCHER", "Saves"],
+    "respect_leaked": ["RESPECT LEAKER", "Respect"]
+}
+hof_len = 10
+for key in titles.keys():
+    arr = [[int(output_data[member][key]), member, output_data[member]["name"]] for member in output_data if output_data[member][key]]
+    arr.sort(key=lambda x: x[0], reverse=True)
+    if len(arr):
+        tops = 1
+        for a in arr[1:]:
+            if a[0] == arr[0][0]:
+                tops += 1
+            else:
+                break
+        if tops == 1:
+            hof.append({
+                "empty": False,
+                "title": titles[key][0],
+                "column": titles[key][1],
+                "best": [arr[0]],
+                "rest": arr[1:hof_len]
+            })
+        elif tops < hof_len:
+            hof.append({
+                "empty": False,
+                "title": titles[key][0],
+                "column": titles[key][1],
+                "best": [],
+                "rest": arr[:hof_len]
+            })
+        else:
+            hof.append({
+                "empty": False,
+                "title": titles[key][0],
+                "column": titles[key][1],
+                "best": [],
+                "rest": arr[:tops]
+            })
+    else:
+        hof.append({
+            "empty": True,
+            "title": titles[key][0],
+            "column": titles[key][1],
+            "best": [],
+            "rest": []
+        })
 
 # === Save to htmls
 columns = list(next(iter(output_data.values())).keys())
@@ -184,9 +252,7 @@ html_str = template.render(
     payout  = payout_str,
     columns = columns,
     tables  = tables,
-    supports  = supports[:30],
-    bullies  = bullies[:30],
-    globertrotters  = globertrotters[:30],
+    hof  = hof
 )
  
 out_path = Path("table.html").resolve()

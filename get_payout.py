@@ -408,7 +408,11 @@ def main():
         weasyprint_path = os.path.join(application_path, "util", "weasyprint.exe")
         html_path = os.path.join(application_path, "table.html")
         pdf_path = os.path.join(pwd, f"payouts_{enemy_name}.pdf")
-        subprocess.run(f"{weasyprint_path} {html_path} {pdf_path}", check=False)
+        subprocess.run(
+            f"{weasyprint_path} {html_path} {pdf_path}",
+            check=False,
+            creationflags=subprocess.CREATE_NO_WINDOW
+        )
     except Exception as e:
         error_text = traceback.format_exc()
         messagebox.showerror("Error!", error_text)

@@ -251,7 +251,7 @@ def main():
 
         # === Get Hall of fame
         best_saves.sort(key=lambda x: x[3], reverse=False)
-        hof_len = 7
+        hof_len = 9
         hof = [
             {
                 "empty": False,
@@ -378,7 +378,7 @@ def main():
         table = sorted(list(output_data.values()), key=lambda x: x['payout'], reverse=True)
         tables = [table]
         if len(table) > 50:
-            len_table_half = len(table)//2
+            len_table_half = ceil(len(table)/2)
             tables = [table[:len_table_half], table[len_table_half:]]
         env = Environment(
             loader=FileSystemLoader(searchpath="."),   # looks in current directory

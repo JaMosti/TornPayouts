@@ -3,5 +3,5 @@
 git clean -fdx
 
 @REM Building the exe
-call pyinstaller --noconsole --clean --onefile --add-data "img;img" --icon="img/favicon.ico" get_payout.py
+call pyinstaller --clean --onefile --add-data "img;img" --add-data "util;util" --icon="img/icon.ico" get_payout.py
 

@@ -3,6 +3,7 @@ import subprocess
 from datetime import datetime, timezone
 import time
 import os
+import sys
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 from math import ceil, floor
@@ -34,10 +35,14 @@ params = {
 war_lenght = int((timestamp_to - timestamp_from) / 3600)
 hits_treshold_upgrade = ceil(war_lenght/3*5)
 hits_treshold_downgrade = floor(war_lenght/4*5) * (not public_mode)
+if getattr(sys, 'frozen', False):
+    application_path = sys._MEIPASS
+elif __file__:
+    application_path = os.path.dirname(__file__)
 
 # === Get war data
 url = f"https://api.torn.com/v2/faction/rankedwars?filters=outgoing&limit=10&sort=ASC&to={timestamp_to}&from={timestamp_from}"
-response = requests.get(url, params=params)
+response = requests.get(url, params=params, timeout=1000)
 data = response.json()
 wars = data["rankedwars"]
 this_war = None
@@ -48,14 +53,14 @@ for war in wars:
         break
 else:
     print("No war found")
-    os.exit(0)
+    exit(1)
 
 enemy_name = ""
 did_we_won = this_war["winner"] == faction_id
 war_end = this_war["end"]
 war_from = this_war["start"]
-url = f"https://api.torn.com/v2/faction/{this_war["id"]}/rankedwarreport"
-response = requests.get(url, params=params)
+url = f"https://api.torn.com/v2/faction/{this_war['id']}/rankedwarreport"
+response = requests.get(url, params=params, timeout=1000)
 data = response.json()
 report = data["rankedwarreport"]
 rewards = []
@@ -92,7 +97,7 @@ best_saves = []
 total_payout = 0
 for reward in rewards:
     url = f"https://api.torn.com/v2/market/{reward[0]}/itemmarket/"
-    response = requests.get(url, params=params)
+    response = requests.get(url, params=params, timeout=1000)
     data = response.json()
     item = data["itemmarket"]
     total_payout += item["item"]["average_price"] * reward[1]
@@ -110,7 +115,7 @@ next_link = f"{url}?filters=outgoing&limit=100&sort=ASC&to={timestamp_to}&from={
 prev_attack_timestamp = timestamp_from
 while(next_link):
     try:
-        response = requests.get(next_link, params=params)
+        response = requests.get(next_link, params=params, timeout=1000)
         data = response.json()
         if "attacks" in data:
             attacks = data["attacks"]
@@ -170,7 +175,7 @@ url = "https://api.torn.com/v2/faction/attacks"
 next_link = f"{url}?filters=incoming&limit=100&sort=ASC&to={timestamp_to}&from={timestamp_from}"
 while(next_link):
     try:
-        response = requests.get(next_link, params=params)
+        response = requests.get(next_link, params=params, timeout=1000)
         data = response.json()
         if "attacks" in data:
             attacks = data["attacks"]
@@ -335,21 +340,34 @@ env = Environment(
     loader=FileSystemLoader(searchpath="."),   # looks in current directory
     autoescape=select_autoescape(["html", "xml"])
 )
-template = env.get_template("template.html")
-html_str = template.render(
-    title   = f"War agains {enemy_name} report",
-    victory = did_we_won,
-    rewards  = rewards,
-    payout  = payout_str,
-    columns = columns,
-    tresholds = [hits_treshold_downgrade, hits_treshold_upgrade],
-    tables  = tables,
-    hof  = hof,
-    hof2 = hof2
-)
- 
-out_path = Path("table.html").resolve()
-out_path.write_text(html_str, encoding="utf-8")
-enemy_name = enemy_name.replace(" ", "_")
-subprocess.run(f"weasyprint.exe table.html payouts_{enemy_name}.pdf")
-# os.remove("table.html")
+
+try:
+    pwd = os.getcwd()
+    os.chdir(application_path)
+    template = env.get_template("util/template.html")
+    html_str = template.render(
+        title   = f"War agains {enemy_name} report",
+        victory = did_we_won,
+        rewards  = rewards,
+        payout  = payout_str,
+        columns = columns,
+        tresholds = [hits_treshold_downgrade, hits_treshold_upgrade],
+        tables  = tables,
+        hof  = hof,
+        hof2 = hof2
+    )
+
+    out_path = Path("table.html").resolve()
+    out_path.write_text(html_str, encoding="utf-8")
+    enemy_name = enemy_name.replace(" ", "_")
+
+    os.chdir(pwd)
+    weasyprint_path = os.path.join(application_path, "util", "weasyprint.exe")
+    html_path = os.path.join(application_path, "table.html")
+    pdf_path = os.path.join(pwd, f"payouts_{enemy_name}.pdf")
+    subprocess.run(f"{weasyprint_path} {html_path} {pdf_path}", check=False)
+except Exception as e:
+    print(e)
+    print(pwd)
+    print(application_path)
+    time.sleep(10000)

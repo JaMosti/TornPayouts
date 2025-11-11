@@ -4,6 +4,7 @@
   <meta charset="utf-8"/>
   <title>{{ title or "Table" }}</title>
   <style>
+    *{box-sizing: border-box !important;}
     a{transition-duration: 0.5s;}
     a:hover{ opacity: 0.5 !important}
     h2{font-size:30px}h3{font-size:20px}
@@ -20,12 +21,14 @@
     td,th{border:0;padding:2px;width:110px;position:relative;z-index: 200;}
     th{background:rgba(255,255,255,.2)}
     .col_respect{width:42px}
+    .col_hof{width:84px}
     .col_hits{width:30px;font-size:10px}
     .reward{font-size:20px}
     .reward img{display:inline-block; width: 60px;}
     .rewards{justify-content:center;display:flex;text-align:center;}
     .tables{display:flex;justify-content:space-around;flex-wrap:wrap;}
     .table{vertical-align:top;display:inline-block;min-width: 33.33%}
+    .hof_tables .table{padding:10px;}
     .table.empty{opacity: 0.2}
     .col_payout{text-align:right;font-size:14px}
     .col_name{text-align:left;font-size:14px}
@@ -35,6 +38,10 @@
     .est_price{display: block; font-size: 12px; color: #fff; padding: 0 3px;}
     .created_by{ position: absolute; bottom: 0; right: 0; z-index: 1; width: 150px; display: block}
     .created_by img{display: block; width: 100%;}
+    .best_row{background: rgba(255, 217, 0, 0.163);}
+    .hof_title{font-size: 16px; padding: 5px 2px;}
+    .hof_description{font-size: 12px; font-weight: 400; line-height: 12px; padding: 2px}
+    .hof_tables td{padding: 4px;}
     @media print { .pagebreak { clear: both; page-break-after: always; }}
   </style>
 </head>
@@ -80,25 +87,26 @@
   <br/><br/><br/>
     <h2>HALL OF FAME</h2>
     <br/><br/>
-  <div class="tables">
+  <div class="tables hof_tables">
     {% for table in hof %}
     <div class="table{% if table['empty'] %} empty{% endif %}">
       <table>
         <thead> 
-          <tr> <th colspan="2"> {{ table["title"]}} </th> </tr>
+          <tr> <th class="hof_title" colspan="2"> {{ table["title"]}} </th> </tr>
+          <tr> <th class="hof_description" colspan="2"> {{ table["description"]}} </th> </tr>
+          <tr> <th>Name</th> <th class="col_hof">{{ table["column"] }}</th> </tr>
+        </thead>
+        <tbody>
           {% for r in table["best"] %}
-            <tr class="payout_row">
+            <tr class="payout_row best_row">
               <th class="col_name">
                 <a href="https://www.torn.com/profiles.php?XID={{r[1]}}">
                   {{ r[2] }}
                 </a>
               </th>
-              <th class="col_respect">{{r[0]}}</th>
+              <th class="col_hof">{{r[0]}}</th>
             </tr>
           {% endfor %}
-          <tr> <th>Name</th> <th class="col_respect">{{ table["column"]}}</th> </tr>
-        </thead>
-        <tbody>
           {% for r in table["rest"] %}
             <tr class="payout_row">
               <td class="col_name">
@@ -106,7 +114,48 @@
                   {{ r[2] }}
                 </a>
               </td>
-              <td class="col_respect">{{r[0]}}</td>
+              <td class="col_hof">{{r[0]}}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% endfor %}
+    {% for table in hof2 %}
+    <div class="table{% if table['empty'] %} empty{% endif %}">
+      <table>
+        <thead> 
+          <tr> <th class="hof_title" colspan="{{ table["columns_n"] }}"> {{ table["title"]}} </th> </tr>
+          <tr> <th class="hof_description" colspan="{{ table["columns_n"] }}"> {{ table["description"]}} </th> </tr>
+          <tr> <th>Name</th>
+          {% for column in table["columns"] %}
+            <th class="col_respect">{{ column }}</th>
+          {% endfor %}
+
+        </thead>
+        <tbody>
+          {% for r in table["best"] %}
+            <tr class="payout_row best_row">
+              <th class="col_name">
+                <a href="https://www.torn.com/profiles.php?XID={{r[0]}}">
+                  {{ r[1] }}
+                </a>
+              </th>
+              {% for rr in r[2:] %}
+                <th class="col_respect">{{rr}}</th>
+              {% endfor %}
+            </tr>
+          {% endfor %}
+          {% for r in table["rest"] %}
+            <tr class="payout_row">
+              <td class="col_name">
+                <a href="https://www.torn.com/profiles.php?XID={{r[0]}}">
+                  {{ r[1] }}
+                </a>
+              </td>
+              {% for rr in r[2:] %}
+                <th class="col_respect">{{rr}}</th>
+              {% endfor %}
             </tr>
           {% endfor %}
         </tbody>

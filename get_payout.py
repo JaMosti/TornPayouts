@@ -67,23 +67,24 @@ for faction in report["factions"]:
             output_data[member["id"]] = {
                 "id": member["id"],
                 "name": member["name"],
-                "attacks_war": 0,
                 "respect_war": 0,
                 "respect_leaked": 0,
-                "attacks_raid": 0,
                 "respect_raid": 0,
                 "respect_raid_adj": 0,
                 "adjusted_respect": 0,
                 "attacks_below_2_ff": 0,
+                "attacks": 0,
+                "outside_attacks": 0,
                 "chain_watcher": 0,
                 "assists": 0,
+                "retaliation": 0,
                 "overseas": 0,
                 "payout": 0,
                 "payout_str": "",
             }
     else:
         enemy_name = faction["name"]
-
+best_saves = []
 # === Count total payout
 total_payout = 0
 for reward in rewards:
@@ -118,23 +119,38 @@ while(next_link):
 
                 if respect_gain:
                     if attack["is_ranked_war"]:
-                        output_data[attack["attacker"]["id"]]["attacks_war"] += 1
+                        output_data[attack["attacker"]["id"]]["attacks"] += 1
                         adj = respect_gain if int(war_end) > int(attack["started"]) else 0
                         output_data[attack["attacker"]["id"]]["respect_war"] += adj
                     elif attack["is_raid"]:
-                        output_data[attack["attacker"]["id"]]["attacks_raid"] += 1
+                        output_data[attack["attacker"]["id"]]["attacks"] += 1
                         output_data[attack["attacker"]["id"]]["respect_raid"] += respect_gain
                         adj = respect_gain * raid_factor_during_war \
                                 if int(war_end) > int(attack["started"]) \
                                 else respect_gain * raid_factor_after_war
                         output_data[attack["attacker"]["id"]]["respect_raid_adj"] += adj
-                    
-                    if attack["chain"] > 25:
-                        output_data[attack["attacker"]["id"]]["chain_watcher"] += attack["ended"] - prev_attack_timestamp > 180 # Chain saved
+                    else:
+                        output_data[attack["attacker"]["id"]]["outside_attacks"] += 1
+                        
+                    if attack["chain"] > 10:
+                        chain_timer = 300 - (attack["ended"] - prev_attack_timestamp)
+                        if chain_timer > 0 and chain_timer < 120: # Chain saved
+                            output_data[attack["attacker"]["id"]]["chain_watcher"] += 1
+                            best_saves.append(
+                                [
+                                 f"{chain_timer//60}:{chain_timer%60:02d}",
+                                 attack["attacker"]["id"],
+                                 attack["attacker"]["name"],
+                                 chain_timer
+                                ]
+                            )
 
                     if attack["is_ranked_war"] or attack["is_raid"]:
                         output_data[attack["attacker"]["id"]]["overseas"] += attack["modifiers"]["overseas"] > 1 # Overseas
-                        output_data[attack["attacker"]["id"]]["attacks_below_2_ff"] += attack["modifiers"]["fair_fight"] < 2 # Below 2 FF
+                        if attack["modifiers"]["retaliation"] > 1:
+                            output_data[attack["attacker"]["id"]]["retaliation"] += 1 # retaliation
+                        else:
+                            output_data[attack["attacker"]["id"]]["attacks_below_2_ff"] += attack["modifiers"]["fair_fight"] < 2 # Below 2 FF
                 if attack["is_ranked_war"] or attack["is_raid"]:
                     output_data[attack["attacker"]["id"]]["assists"] += attack["result"] == "Assist" # Assists
                 prev_attack_timestamp = attack["ended"]
@@ -181,16 +197,56 @@ for member in output_data:
     output_data[member]["respect_raid"] = int(output_data[member]["respect_raid"])
     output_data[member]["adjusted_respect"] = int(output_data[member]["adjusted_respect"])
 
-# === Get supports
-hof = []
-titles = {
-    "assists": ["SUPPORT", "Assits"],
-    "attacks_below_2_ff": ["BABY BULLY", "Hits"],
-    "overseas": ["GLOBETROTTER", "Hits"],
-    "chain_watcher": ["CHAIN WATCHER", "Saves"],
-    "respect_leaked": ["RESPECT LEAKER", "Respect"]
-}
+# === Get Hall of fame
+best_saves.sort(key=lambda x: x[3], reverse=False)
 hof_len = 10
+hof = [
+    {
+        "empty": False,
+        "title": "Not Even Close",
+        "description": "Hits with lowest chain timer",
+        "column": "Timer",
+        "best": [best_saves[0]],
+        "rest": best_saves[1:hof_len]
+    }
+]
+titles = {
+    "chain_watcher": [
+        "On Guard",
+        "Hits done with chain timer < 2min",
+        "Saves" 
+    ],
+    "assists":  [
+        "Support",
+        "War/Raid hit assists",
+        "Assits"
+    ],
+    "attacks":  [
+        "Punch Factory",
+        "War/Raid hits",
+        "Hits"
+    ],
+    "outside_attacks": [
+        "Collateral Damage",
+        "Outside hits",
+        "Hits"
+    ],
+    "retaliation": [
+        "Punisher",
+        "Retaliation hits",
+        "Hits"
+    ],
+    "overseas": [
+        "Globetrotter",
+        "War/Raid hits overseas",
+        "Hits"
+    ],
+    "respect_leaked": [
+        "Piñata",
+        "Respect given to enemy faction",
+        "Respect"
+    ]
+}
 for key in titles.keys():
     arr = [[int(output_data[member][key]), member, output_data[member]["name"]] for member in output_data if output_data[member][key]]
     arr.sort(key=lambda x: x[0], reverse=True)
@@ -205,7 +261,8 @@ for key in titles.keys():
             hof.append({
                 "empty": False,
                 "title": titles[key][0],
-                "column": titles[key][1],
+                "description": titles[key][1],
+                "column": titles[key][2],
                 "best": [arr[0]],
                 "rest": arr[1:hof_len]
             })
@@ -213,7 +270,8 @@ for key in titles.keys():
             hof.append({
                 "empty": False,
                 "title": titles[key][0],
-                "column": titles[key][1],
+                "description": titles[key][1],
+                "column": titles[key][2],
                 "best": [],
                 "rest": arr[:hof_len]
             })
@@ -221,7 +279,8 @@ for key in titles.keys():
             hof.append({
                 "empty": False,
                 "title": titles[key][0],
-                "column": titles[key][1],
+                "description": titles[key][1],
+                "column": titles[key][2],
                 "best": [],
                 "rest": arr[:tops]
             })
@@ -229,10 +288,41 @@ for key in titles.keys():
         hof.append({
             "empty": True,
             "title": titles[key][0],
-            "column": titles[key][1],
+            "description": titles[key][1],
+            "column": titles[key][2],
             "best": [],
             "rest": []
         })
+
+arr = [
+    [member, output_data[member]["name"], int(output_data[member]["attacks_below_2_ff"]), int(output_data[member]["attacks_below_2_ff"]/output_data[member]["attacks"]*100)] \
+      for member in output_data if output_data[member]["attacks"] > 10]
+arr.sort(key=lambda x: x[3], reverse=True)
+arr2 = [[a[0],a[1],a[2],f"{a[3]}%"] for a in arr]
+tops = 1
+for a in arr2[1:]:
+    if a[0] == arr2[0][0]:
+        tops += 1
+    else:
+        break
+if tops == 1:
+    hof2 = [{
+        "title": "Tough-on-Toddlers",
+        "description": "Hits below 2 FF score",
+        "columns": ["Hits", "%"],
+        "columns_n": 3,
+        "best": [arr2[0]],
+        "rest": arr2[1:hof_len]
+    }]
+else:
+    hof2 = [{
+        "title": "Tough-on-Toddlers",
+        "description": "Hits below 2 FF score",
+        "columns": ["Hits", "%"],
+        "columns_n": 3,
+        "best": [],
+        "rest": arr2[:hof_len]
+    }]
 
 # === Save to htmls
 columns = list(next(iter(output_data.values())).keys())
@@ -252,7 +342,8 @@ html_str = template.render(
     payout  = payout_str,
     columns = columns,
     tables  = tables,
-    hof  = hof
+    hof  = hof,
+    hof2 = hof2
 )
  
 out_path = Path("table.html").resolve()
